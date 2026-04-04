@@ -1,12 +1,12 @@
 package dto
 
-type XcodeRequest struct {
+type SttRequest struct {
 	SourceFilePath string `json:"source_file_path" binding:"required" san:"trim,xss"`
 }
 
-type Xcode struct {
-	XcodeDate      string
+type Stt struct {
+	SttDate        string
 	SourceFileName string
 	Status         string
-	TargetFileName string
+	TextFileName   string
 }

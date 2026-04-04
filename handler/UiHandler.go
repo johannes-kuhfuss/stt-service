@@ -25,10 +25,10 @@ func (uh *UiHandler) AboutPage(c *gin.Context) {
 	})
 }
 
-func (uh *UiHandler) XcodeListPage(c *gin.Context) {
-	files := helper.GetSortedXcodeList(uh.Cfg.RunTime.XcodeList)
-	c.HTML(http.StatusOK, "xcodelist.page.tmpl", gin.H{
-		"title": "Transcode List",
+func (uh *UiHandler) SttListPage(c *gin.Context) {
+	files := helper.GetSortedSttList(uh.Cfg.RunTime.SttList)
+	c.HTML(http.StatusOK, "sttlist.page.tmpl", gin.H{
+		"title": "Speech-to-Text List",
 		"data":  files,
 	})
 }

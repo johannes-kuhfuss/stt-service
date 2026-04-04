@@ -1,26 +1,26 @@
-{{ define "xcodelist.page.tmpl" }}
+{{ define "sttlist.page.tmpl" }}
 
 {{ template "header" .}}
 
    <div class="container-fluid">
         <div class="row">
             <div class="col">
-                <h2>Files transcoded</h2>
+                <h2>Speech to Text extracted</h2>
                 <table class="table table-striped table-sm">
                     <thead>
                         <tr>
-                          <th scope="col">Transcode Date</th>
+                          <th scope="col">Extraction Date</th>
                           <th scope="col">Source Name</th>
-                          <th scope="col">Target Name</th>
+                          <th scope="col">Text File Name</th>
                           <th scope="col">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{ range .data }}
                         <tr>
-                          <td>{{ .XcodeDate }}</td>
+                          <td>{{ .SttDate }}</td>
                           <td>{{ .SourceFileName }}</td>
-                          <td>{{ .TargetFileName }}</td>
+                          <td>{{ .TextFileName }}</td>
                           <td>{{ .Status }}</td>
                         </tr>
                         {{ end }}

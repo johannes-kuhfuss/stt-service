@@ -28,23 +28,22 @@ type AppConfig struct {
 		Mode         string `envconfig:"GIN_MODE" default:"release"`
 		TemplatePath string `envconfig:"TEMPLATE_PATH" default:"./templates/"`
 	}
-	Xcode struct {
-		XcodePath  string `envconfig:"XCODE_PATH" default:"C:\\TEMP"`
-		FfmpegPath string `envconfig:"FFMPEG_PATH" default:"./prog/ffmpeg.exe"`
+	Stt struct {
+		SttPath string `envconfig:"XCODE_PATH" default:"C:\\TEMP"`
 	}
 	RunTime struct {
 		Router     *gin.Engine
 		ListenAddr string
 		StartDate  time.Time
 		Sani       *sanitize.Sanitizer
-		XcodeList  []domain.Xcode
+		SttList    []domain.Stt
 		OTrace     trace.Tracer
 		OMeter     metric.Meter
 		OLog       *slog.Logger
 	}
 	Metrics struct {
-		UploadSuccessCounter metric.Int64Counter
-		UploadFailureCounter metric.Int64Counter
+		SttSuccessCounter metric.Int64Counter
+		SttFailureCounter metric.Int64Counter
 	}
 }
 

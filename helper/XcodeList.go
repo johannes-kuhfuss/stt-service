@@ -9,31 +9,31 @@ import (
 	"github.com/johannes-kuhfuss/stt-service/dto"
 )
 
-func AddToXcodeList(cfg *config.AppConfig, source, target, status string) {
-	xc := domain.Xcode{
-		XcodeDate:      time.Now(),
+func AddToSttList(cfg *config.AppConfig, source, textFile, status string) {
+	xc := domain.Stt{
+		SttDate:        time.Now(),
 		SourceFileName: source,
 		Status:         status,
-		TargetFileName: target,
+		TextFileName:   textFile,
 	}
 
-	cfg.RunTime.XcodeList = append(cfg.RunTime.XcodeList, xc)
+	cfg.RunTime.SttList = append(cfg.RunTime.SttList, xc)
 }
 
-func GetSortedXcodeList(list []domain.Xcode) []dto.Xcode {
+func GetSortedSttList(list []domain.Stt) []dto.Stt {
 	var (
-		entry      dto.Xcode
-		sortedList []dto.Xcode
+		entry      dto.Stt
+		sortedList []dto.Stt
 	)
 
 	sort.Slice(list, func(i, j int) bool {
-		return list[i].XcodeDate.After((list[j].XcodeDate))
+		return list[i].SttDate.After((list[j].SttDate))
 	})
 
 	for _, el := range list {
-		entry.XcodeDate = el.XcodeDate.Format("2006-01-02 15:04:05")
+		entry.SttDate = el.SttDate.Format("2006-01-02 15:04:05")
 		entry.SourceFileName = el.SourceFileName
-		entry.TargetFileName = el.TargetFileName
+		entry.TextFileName = el.TextFileName
 		entry.Status = el.Status
 		sortedList = append(sortedList, entry)
 	}

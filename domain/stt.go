@@ -2,9 +2,9 @@ package domain
 
 import "time"
 
-type Xcode struct {
-	XcodeDate      time.Time
+type Stt struct {
+	SttDate        time.Time
 	SourceFileName string
 	Status         string
-	TargetFileName string
+	TextFileName   string
 }

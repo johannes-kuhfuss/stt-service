@@ -12,41 +12,41 @@ import (
 	"github.com/johannes-kuhfuss/stt-service/service"
 )
 
-type XcodeHandler struct {
-	Svc service.DefaultXcodeService
+type SttHandler struct {
+	Svc service.DefaultSttService
 	Cfg *config.AppConfig
 }
 
-func NewXcodeHandler(cfg *config.AppConfig, svc service.DefaultXcodeService) XcodeHandler {
-	return XcodeHandler{
+func NewSttHandler(cfg *config.AppConfig, svc service.DefaultSttService) SttHandler {
+	return SttHandler{
 		Cfg: cfg,
 		Svc: svc,
 	}
 }
 
-func (uh XcodeHandler) Receive(c *gin.Context) {
-	var newXcodeReq dto.XcodeRequest
-	if err := c.ShouldBindJSON(&newXcodeReq); err != nil {
-		msg := "Invalid JSON body in transcode request"
+func (uh SttHandler) Receive(c *gin.Context) {
+	var newSttReq dto.SttRequest
+	if err := c.ShouldBindJSON(&newSttReq); err != nil {
+		msg := "Invalid JSON body in STT request"
 		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
 	}
-	uh.Cfg.RunTime.Sani.Sanitize(&newXcodeReq)
-	if err := validateNewXcodeRequest(newXcodeReq); err != nil {
-		msg := "Invalid parameter in transcode request."
+	uh.Cfg.RunTime.Sani.Sanitize(&newSttReq)
+	if err := validateNewSttRequest(newSttReq); err != nil {
+		msg := "Invalid parameter in STT request."
 		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
 	}
-	uh.Svc.Xcode(newXcodeReq.SourceFilePath)
+	uh.Svc.Extract(newSttReq.SourceFilePath)
 
 	c.JSON(http.StatusCreated, nil)
 }
 
-func validateNewXcodeRequest(req dto.XcodeRequest) error {
+func validateNewSttRequest(req dto.SttRequest) error {
 	if req.SourceFilePath == "" {
 		return errors.New("Source File Path cannot be empty")
 	}

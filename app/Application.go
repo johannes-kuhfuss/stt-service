@@ -27,15 +27,15 @@ import (
 const oTelName = "stt-service"
 
 var (
-	cfg           config.AppConfig
-	server        http.Server
-	appEnd        chan os.Signal
-	ctx           context.Context
-	cancel        context.CancelFunc
-	uploadService service.DefaultXcodeService
-	xcodeHandler  handler.XcodeHandler
-	uiHandler     handler.UiHandler
-	otelShutdown  func(context.Context) error
+	cfg          config.AppConfig
+	server       http.Server
+	appEnd       chan os.Signal
+	ctx          context.Context
+	cancel       context.CancelFunc
+	sttService   service.DefaultSttService
+	sttHandler   handler.SttHandler
+	uiHandler    handler.UiHandler
+	otelShutdown func(context.Context) error
 )
 
 func StartApp() {
@@ -133,14 +133,14 @@ func initServer() {
 }
 
 func wireApp() {
-	uploadService = service.NewXcodeService(&cfg)
-	xcodeHandler = handler.NewXcodeHandler(&cfg, uploadService)
+	sttService = service.NewSttService(&cfg)
+	sttHandler = handler.NewSttHandler(&cfg, sttService)
 	uiHandler = handler.NewUiHandler(&cfg)
 }
 
 func mapUrls() {
-	cfg.RunTime.Router.POST("/xcode", xcodeHandler.Receive)
-	cfg.RunTime.Router.GET("/", uiHandler.XcodeListPage)
+	cfg.RunTime.Router.POST("/stt", sttHandler.Receive)
+	cfg.RunTime.Router.GET("/", uiHandler.SttListPage)
 	cfg.RunTime.Router.GET("/about", uiHandler.AboutPage)
 }
 
