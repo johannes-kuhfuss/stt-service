@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 )
 
 const oTelName = "stt-service"
@@ -82,6 +83,13 @@ func setupOtel() {
 	cfg.RunTime.OTrace = otel.Tracer(oTelName)
 	cfg.RunTime.OMeter = otel.Meter(oTelName)
 	cfg.RunTime.OLog = otelslog.NewLogger(oTelName)
+
+	cfg.Metrics.SttSuccessCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttsuccess.counter",
+		metric.WithDescription("Number of Successful Speech-To-Text Extractions"),
+		metric.WithUnit("{count}"))
+	cfg.Metrics.SttFailureCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttfailure.counter",
+		metric.WithDescription("Number of Failed Speech-To-Text Extractions"),
+		metric.WithUnit("{count}"))
 }
 
 func initRouter() {

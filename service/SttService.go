@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/johannes-kuhfuss/stt-service/config"
 )
 
@@ -19,5 +21,6 @@ func NewSttService(cfg *config.AppConfig) DefaultSttService {
 }
 
 func (s DefaultSttService) Extract(sourcePath string) error {
+	s.Cfg.Metrics.SttSuccessCounter.Add(context.TODO(), 1)
 	return nil
 }
