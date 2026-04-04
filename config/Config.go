@@ -29,7 +29,7 @@ type AppConfig struct {
 		TemplatePath string `envconfig:"TEMPLATE_PATH" default:"./templates/"`
 	}
 	Stt struct {
-		SttPath string `envconfig:"XCODE_PATH" default:"C:\\TEMP"`
+		SttPath string `envconfig:"STT_PATH" default:"C:\\TEMP"`
 	}
 	RunTime struct {
 		Router     *gin.Engine
