@@ -29,7 +29,8 @@ type AppConfig struct {
 		TemplatePath string `envconfig:"TEMPLATE_PATH" default:"./templates/"`
 	}
 	Stt struct {
-		SttPath string `envconfig:"STT_PATH" default:"C:\\TEMP"`
+		SttPath    string `envconfig:"STT_PATH" default:"C:\\TEMP"`
+		VoskServer string `envconfig:"VOSK_SERVER" default:"localhost:2700"`
 	}
 	RunTime struct {
 		Router     *gin.Engine
