@@ -9,4 +9,5 @@ type Stt struct {
 	SourceFileName string
 	Status         string
 	TextFileName   string
+	Text           string
 }

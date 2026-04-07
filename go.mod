@@ -5,7 +5,6 @@ go 1.26.1
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-sanitize/sanitize v1.1.0
-	github.com/gorilla/websocket v1.5.3
 	github.com/johannes-kuhfuss/services_utils v1.0.36
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0

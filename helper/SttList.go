@@ -9,12 +9,13 @@ import (
 	"github.com/johannes-kuhfuss/stt-service/dto"
 )
 
-func AddToSttList(cfg *config.AppConfig, source, textFile, status string) {
+func AddToSttList(cfg *config.AppConfig, source, textFile, status, text string) {
 	xc := domain.Stt{
 		SttDate:        time.Now(),
 		SourceFileName: source,
 		Status:         status,
 		TextFileName:   textFile,
+		Text:           text,
 	}
 
 	cfg.RunTime.SttList = append(cfg.RunTime.SttList, xc)
@@ -35,6 +36,7 @@ func GetSortedSttList(list []domain.Stt) []dto.Stt {
 		entry.SourceFileName = el.SourceFileName
 		entry.TextFileName = el.TextFileName
 		entry.Status = el.Status
+		entry.Text = el.Text
 		sortedList = append(sortedList, entry)
 	}
 	return sortedList
