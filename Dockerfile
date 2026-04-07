@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=0 /build/stt-service/stt-service /app/stt-service
 COPY --from=0 /build/stt-service/templates /app/templates
 COPY --from=0 /build/stt-service/bootstrap /app/bootstrap
-RUN addgroup -g 101 servicegroup && adduser -s /sbin/nologin -G servicegroup -D -H -u 101 serviceuser
+RUN addgroup -g 10000 servicegroup && adduser -s /sbin/nologin -G servicegroup -D -H -u 10000 serviceuser
 USER serviceuser
 ENV STT_PATH=/uploads
 HEALTHCHECK --interval=120s --timeout=5s CMD wget -q --spider http://localhost:8080/ || exit 1
