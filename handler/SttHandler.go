@@ -2,11 +2,11 @@ package handler
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/johannes-kuhfuss/services_utils/api_error"
+	"github.com/johannes-kuhfuss/services_utils/logger"
 	"github.com/johannes-kuhfuss/stt-service/config"
 	"github.com/johannes-kuhfuss/stt-service/dto"
 	"github.com/johannes-kuhfuss/stt-service/service"
@@ -29,7 +29,7 @@ func (uh SttHandler) Receive(c *gin.Context) {
 	if err := c.ShouldBindJSON(&newSttReq); err != nil {
 		msg := "Invalid JSON body in STT request"
 		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
-		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		logger.Error(msg, err)
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
@@ -38,7 +38,7 @@ func (uh SttHandler) Receive(c *gin.Context) {
 	if err := validateNewSttRequest(newSttReq); err != nil {
 		msg := "Invalid parameter in STT request."
 		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
-		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		logger.Error(msg, err)
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return

@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/johannes-kuhfuss/services_utils/logger"
 	"github.com/johannes-kuhfuss/stt-service/config"
 	"github.com/johannes-kuhfuss/stt-service/helper"
 )
@@ -37,7 +37,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		msg := "Error when saving result"
 		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		logger.Error(msg, err)
 		return err
 	}
 	defer targetFile.Close()

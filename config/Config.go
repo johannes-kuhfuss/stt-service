@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sanitize/sanitize"
+	"github.com/johannes-kuhfuss/services_utils/logger"
 	"github.com/johannes-kuhfuss/stt-service/domain"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
@@ -39,7 +39,6 @@ type AppConfig struct {
 		SttList    []domain.Stt
 		OTrace     trace.Tracer
 		OMeter     metric.Meter
-		OLog       *slog.Logger
 	}
 	Metrics struct {
 		SttSuccessCounter metric.Int64Counter
@@ -52,13 +51,13 @@ var (
 )
 
 func InitConfig(file string, config *AppConfig) error {
-	config.RunTime.OLog.Info(fmt.Sprintf("Initalizing configuration from file %v...", file))
+	logger.Info(fmt.Sprintf("Initalizing configuration from file %v...", file))
 	loadConfig(file)
 	err := envconfig.Process("", config)
 	if err != nil {
 		return fmt.Errorf("Could not initalize configuration. Check your environment variables. %v", err.Error())
 	}
-	config.RunTime.OLog.Info("Configuration initialized")
+	logger.Info("Configuration initialized")
 	return nil
 }
 

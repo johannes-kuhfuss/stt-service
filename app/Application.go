@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,11 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-sanitize/sanitize"
 	"github.com/johannes-kuhfuss/services_utils/date"
+	"github.com/johannes-kuhfuss/services_utils/logger"
 	"github.com/johannes-kuhfuss/stt-service/config"
 	"github.com/johannes-kuhfuss/stt-service/handler"
 	"github.com/johannes-kuhfuss/stt-service/service"
-	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 )
 
 const oTelName = "stt-service"
@@ -39,7 +40,7 @@ var (
 
 func StartApp() {
 	setupOtel()
-	cfg.RunTime.OLog.Info("Starting application...")
+	logger.Info("Starting application...")
 
 	getCmdLine()
 	err := config.InitConfig(config.EnvFile, &cfg)
@@ -59,9 +60,9 @@ func StartApp() {
 	cleanUp()
 
 	if srvErr := server.Shutdown(ctx); srvErr != nil {
-		cfg.RunTime.OLog.Error("Graceful shutdown failed", slog.String("error", srvErr.Error()))
+		logger.Error("Graceful shutdown failed", err)
 	} else {
-		cfg.RunTime.OLog.Error("Graceful shutdown finished")
+		logger.Info("Graceful shutdown finished")
 	}
 }
 
@@ -78,18 +79,15 @@ func setupOtel() {
 	if err != nil {
 		fmt.Println("Otel setup went wrong")
 	}
-	//cfg.RunTime.OTrace = otel.Tracer(oTelName)
-	//cfg.RunTime.OMeter = otel.Meter(oTelName)
-	cfg.RunTime.OLog = otelslog.NewLogger(oTelName)
+	cfg.RunTime.OTrace = otel.Tracer(oTelName)
+	cfg.RunTime.OMeter = otel.Meter(oTelName)
 
-	/*
-		cfg.Metrics.SttSuccessCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttsuccess.counter",
-			metric.WithDescription("Number of Successful Speech-To-Text Extractions"),
-			metric.WithUnit("{count}"))
-		cfg.Metrics.SttFailureCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttfailure.counter",
-			metric.WithDescription("Number of Failed Speech-To-Text Extractions"),
-			metric.WithUnit("{count}"))
-	*/
+	cfg.Metrics.SttSuccessCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttsuccess.counter",
+		metric.WithDescription("Number of Successful Speech-To-Text Extractions"),
+		metric.WithUnit("{count}"))
+	cfg.Metrics.SttFailureCounter, _ = cfg.RunTime.OMeter.Int64Counter("sttfailure.counter",
+		metric.WithDescription("Number of Failed Speech-To-Text Extractions"),
+		metric.WithUnit("{count}"))
 }
 
 func initRouter() {
@@ -160,23 +158,23 @@ func RegisterForOsSignals() {
 func createSanitizers() {
 	sani, err := sanitize.New()
 	if err != nil {
-		cfg.RunTime.OLog.Error("Error creating sanitizer", slog.String("Error Message", err.Error()))
+		logger.Error("Error creating sanitizer", err)
 		panic(err)
 	}
 	cfg.RunTime.Sani = sani
 }
 
 func startServer() {
-	cfg.RunTime.OLog.Info(fmt.Sprintf("Listening on %v", cfg.RunTime.ListenAddr))
+	logger.Info(fmt.Sprintf("Listening on %v", cfg.RunTime.ListenAddr))
 	cfg.RunTime.StartDate = date.GetNowUtc()
 	if cfg.Server.UseTls {
 		if err := server.ListenAndServeTLS(cfg.Server.CertFile, cfg.Server.KeyFile); err != nil && err != http.ErrServerClosed {
-			cfg.RunTime.OLog.Error("Error while starting https server", slog.String("Error Message", err.Error()))
+			logger.Error("Error while starting https server", err)
 			panic(err)
 		}
 	} else {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			cfg.RunTime.OLog.Error("Error while starting http server", slog.String("Error Message", err.Error()))
+			logger.Error("Error while starting http server", err)
 			panic(err)
 		}
 	}
@@ -187,7 +185,7 @@ func cleanUp() {
 	ctx, cancel = context.WithTimeout(context.Background(), shutdownTime)
 	defer cancel()
 	defer func() {
-		cfg.RunTime.OLog.Info("Cleaning up")
+		logger.Info("Cleaning up...")
 		otelShutdown(ctx)
 		cancel()
 	}()
