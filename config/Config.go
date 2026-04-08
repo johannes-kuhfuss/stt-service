@@ -29,7 +29,10 @@ type AppConfig struct {
 		TemplatePath string `envconfig:"TEMPLATE_PATH" default:"./templates/"`
 	}
 	Stt struct {
-		SttPath string `envconfig:"STT_PATH" default:"C:\\TEMP"`
+		SttPath       string `envconfig:"STT_PATH" default:"C:\\TEMP"`
+		SpeachesHost  string `envconfig:"SPEACHES_HOST"`
+		SpeachesPort  string `envconfig:"SPEACHES_PORT" default:"8000"`
+		SpeachesModel string `envconfig:"SPEACHES_MODEL" default:"Systran/faster-whisper-small"`
 	}
 	RunTime struct {
 		Router     *gin.Engine
