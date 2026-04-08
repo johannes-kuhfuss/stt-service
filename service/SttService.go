@@ -127,25 +127,30 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			return err
 		}
 		extractedText = jsonRes["text"].(string)
-	}
+		basePath := filepath.Dir(sourceFilePath)
+		file := fileNameWithoutExt(filepath.Base(sourceFilePath))
+		targetFilePath := filepath.Join(basePath, file+".txt")
+		targetFile, err := os.Create(targetFilePath)
+		if err != nil {
+			msg := "Error when saving result"
+			helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
+			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
+			logger.Error(msg, err)
+			return err
+		}
+		defer targetFile.Close()
+		targetFile.WriteString(extractedText)
+		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, "Speech-To-Text extracted successfully", extractedText)
 
-	basePath := filepath.Dir(sourceFilePath)
-	file := fileNameWithoutExt(filepath.Base(sourceFilePath))
-	targetFilePath := filepath.Join(basePath, file+".txt")
-	targetFile, err := os.Create(targetFilePath)
-	if err != nil {
-		msg := "Error when saving result"
-		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
+		s.Cfg.Metrics.SttSuccessCounter.Add(context.TODO(), 1)
+		return nil
+	} else {
+		msg := "Error during speech-to-text processing"
+		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
 		return err
 	}
-	defer targetFile.Close()
-	targetFile.WriteString(extractedText)
-	helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, "Speech-To-Text extracted successfully", extractedText)
-
-	s.Cfg.Metrics.SttSuccessCounter.Add(context.TODO(), 1)
-	return nil
 }
 
 func fileNameWithoutExt(fileName string) string {
