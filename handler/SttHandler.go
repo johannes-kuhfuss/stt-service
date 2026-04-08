@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,7 @@ func (uh SttHandler) Receive(c *gin.Context) {
 		msg := "Invalid JSON body in STT request"
 		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
 		logger.Error(msg, err)
+		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
@@ -39,6 +41,7 @@ func (uh SttHandler) Receive(c *gin.Context) {
 		msg := "Invalid parameter in STT request."
 		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
 		logger.Error(msg, err)
+		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return

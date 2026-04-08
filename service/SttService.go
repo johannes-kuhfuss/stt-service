@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -40,7 +41,9 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		extractedText string
 		jsonRes       map[string]any
 	)
-	logger.Info(fmt.Sprintf("Starting extraction using speaches at %v:%v...", s.Cfg.Stt.SpeachesHost, s.Cfg.Stt.SpeachesPort))
+	msg := fmt.Sprintf("Starting extraction using speaches at %v:%v...", s.Cfg.Stt.SpeachesHost, s.Cfg.Stt.SpeachesPort)
+	logger.Info(msg)
+	s.Cfg.RunTime.OLog.Info(msg)
 	sourceFilePath := filepath.Join(s.Cfg.Stt.SttPath, sourcePath)
 	f, err := os.Open(sourceFilePath)
 	if err != nil {
@@ -48,6 +51,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	defer f.Close()
@@ -57,6 +61,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	_, err = io.Copy(fWriter, f)
@@ -65,6 +70,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	err = mpw.WriteField("model", s.Cfg.Stt.SpeachesModel)
@@ -73,6 +79,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	err = mpw.WriteField("reponse_format", "text")
@@ -81,6 +88,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	err = mpw.Close()
@@ -89,6 +97,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 	speachesUrl := url.URL{
@@ -108,7 +117,9 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	logger.Info(fmt.Sprintf("STT Request Response: %v", resp.Status))
+	msg = fmt.Sprintf("STT Request Response: %v", resp.Status)
+	logger.Info(msg)
+	s.Cfg.RunTime.OLog.Info(msg)
 	if resp.StatusCode == http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -116,6 +127,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
+			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 			return err
 		}
 		err = json.Unmarshal(bodyBytes, &jsonRes)
@@ -124,6 +136,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
+			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 			return err
 		}
 		extractedText = jsonRes["text"].(string)
@@ -136,19 +149,23 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
+			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 			return err
 		}
 		defer targetFile.Close()
 		targetFile.WriteString(extractedText)
 		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, "Speech-To-Text extracted successfully", extractedText)
-
 		s.Cfg.Metrics.SttSuccessCounter.Add(context.TODO(), 1)
+		msg := "STT extraction successful"
+		logger.Info(msg)
+		s.Cfg.RunTime.OLog.Info(msg)
 		return nil
 	} else {
 		msg := "Error during speech-to-text processing"
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
 		return err
 	}
 }

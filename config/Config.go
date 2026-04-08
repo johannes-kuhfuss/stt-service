@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,7 @@ type AppConfig struct {
 		SttList    []domain.Stt
 		OTrace     trace.Tracer
 		OMeter     metric.Meter
+		OLog       *slog.Logger
 	}
 	Metrics struct {
 		SttSuccessCounter metric.Int64Counter
@@ -54,13 +56,17 @@ var (
 )
 
 func InitConfig(file string, config *AppConfig) error {
-	logger.Info(fmt.Sprintf("Initalizing configuration from file %v...", file))
+	msg := fmt.Sprintf("Initalizing configuration from file %v...", file)
+	logger.Info(msg)
+	config.RunTime.OLog.Info(msg)
 	loadConfig(file)
 	err := envconfig.Process("", config)
 	if err != nil {
 		return fmt.Errorf("Could not initalize configuration. Check your environment variables. %v", err.Error())
 	}
-	logger.Info("Configuration initialized")
+	msg = "Configuration initialized"
+	logger.Info(msg)
+	config.RunTime.OLog.Info(msg)
 	return nil
 }
 
