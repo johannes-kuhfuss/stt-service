@@ -20,6 +20,9 @@ import (
 	"github.com/johannes-kuhfuss/stt-service/config"
 	"github.com/johannes-kuhfuss/stt-service/helper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type SttExtracter interface {
@@ -107,16 +110,28 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		Host:   net.JoinHostPort(s.Cfg.Stt.SpeachesHost, s.Cfg.Stt.SpeachesPort),
 		Path:   "/v1/audio/transcriptions",
 	}
+	stc := trace.SpanContextFromContext(s.Cfg.RunTime.Ctx)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx = trace.ContextWithRemoteSpanContext(ctx, stc)
+	tracer := otel.Tracer("stt-service")
+	ctx, span := tracer.Start(ctx, "speech-to-text_request",
+		trace.WithAttributes(
+			attribute.String("http.url", speachesUrl.String()),
+		),
+	)
+	defer span.End()
 	client := http.Client{
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
-	req, err := http.NewRequest("POST", speachesUrl.String(), buf)
+	req, err := http.NewRequestWithContext(ctx, "POST", speachesUrl.String(), buf)
 	if err != nil {
 		msg := "Error when creating request"
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
 		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		span.RecordError(err)
 		return err
 	}
 	req.Header.Add("Content-Type", mpw.FormDataContentType())
@@ -127,6 +142,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
 		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		span.RecordError(err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -141,6 +157,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
 			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			span.RecordError(err)
 			return err
 		}
 		err = json.Unmarshal(bodyBytes, &jsonRes)
@@ -150,6 +167,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
 			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			span.RecordError(err)
 			return err
 		}
 		extractedText = jsonRes["text"].(string)
@@ -163,6 +181,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
 			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			span.RecordError(err)
 			return err
 		}
 		defer targetFile.Close()
@@ -172,6 +191,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		msg := "STT extraction successful"
 		logger.Info(msg)
 		s.Cfg.RunTime.OLog.Info(msg)
+		span.End()
 		return nil
 	} else {
 		msg := "Error during speech-to-text processing"
@@ -180,6 +200,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		err := errors.New("Speaches returned error code")
 		logger.Error(msg, err)
 		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		span.RecordError(err)
 		return err
 	}
 }
