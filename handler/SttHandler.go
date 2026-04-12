@@ -46,7 +46,7 @@ func (uh SttHandler) Receive(c *gin.Context) {
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
 	}
-	go uh.Svc.Extract(newSttReq.SourceFilePath)
+	go uh.Svc.Extract(c.Request.Context(), newSttReq.SourceFilePath)
 
 	c.JSON(http.StatusCreated, nil)
 }

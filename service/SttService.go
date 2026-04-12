@@ -25,6 +25,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const (
+	eMsg = "Error Message"
+)
+
 type SttExtracter interface {
 	Extract(string) error
 }
@@ -39,7 +43,7 @@ func NewSttService(cfg *config.AppConfig) DefaultSttService {
 	}
 }
 
-func (s DefaultSttService) Extract(sourcePath string) error {
+func (s DefaultSttService) Extract(ictx context.Context, sourcePath string) error {
 	var (
 		buf           = new(bytes.Buffer{})
 		mpw           = multipart.NewWriter(buf)
@@ -56,7 +60,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	defer f.Close()
@@ -66,7 +70,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	_, err = io.Copy(fWriter, f)
@@ -75,7 +79,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	err = mpw.WriteField("model", s.Cfg.Stt.SpeachesModel)
@@ -84,7 +88,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	err = mpw.WriteField("reponse_format", "text")
@@ -93,7 +97,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	err = mpw.Close()
@@ -102,7 +106,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		return err
 	}
 	speachesUrl := url.URL{
@@ -110,7 +114,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		Host:   net.JoinHostPort(s.Cfg.Stt.SpeachesHost, s.Cfg.Stt.SpeachesPort),
 		Path:   "/v1/audio/transcriptions",
 	}
-	stc := trace.SpanContextFromContext(s.Cfg.RunTime.Ctx)
+	stc := trace.SpanContextFromContext(ictx)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = trace.ContextWithRemoteSpanContext(ctx, stc)
@@ -130,7 +134,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		span.RecordError(err)
 		return err
 	}
@@ -141,7 +145,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		span.RecordError(err)
 		return err
 	}
@@ -156,7 +160,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			span.RecordError(err)
 			return err
 		}
@@ -166,7 +170,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			span.RecordError(err)
 			return err
 		}
@@ -180,7 +184,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 			helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
 			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			span.RecordError(err)
 			return err
 		}
@@ -199,7 +203,7 @@ func (s DefaultSttService) Extract(sourcePath string) error {
 		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
 		err := errors.New("Speaches returned error code")
 		logger.Error(msg, err)
-		s.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		span.RecordError(err)
 		return err
 	}

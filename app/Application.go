@@ -26,7 +26,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const oTelName = "stt-service"
+const (
+	oTelName = "stt-service"
+	eMsg     = "Error Message"
+)
 
 var (
 	cfg          config.AppConfig
@@ -87,7 +90,6 @@ func setupOtel() {
 	if err != nil {
 		fmt.Println("Otel setup went wrong")
 	}
-	cfg.RunTime.Ctx = ctx
 	cfg.RunTime.OTrace = otel.Tracer(oTelName)
 	cfg.RunTime.OMeter = otel.Meter(oTelName)
 	cfg.RunTime.OLog = otelslog.NewLogger(oTelName)
@@ -170,7 +172,7 @@ func createSanitizers() {
 	if err != nil {
 		msg := "Error creating sanitizer"
 		logger.Error(msg, err)
-		cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 		panic(err)
 	}
 	cfg.RunTime.Sani = sani
@@ -185,14 +187,14 @@ func startServer() {
 		if err := server.ListenAndServeTLS(cfg.Server.CertFile, cfg.Server.KeyFile); err != nil && err != http.ErrServerClosed {
 			msg := "Error while starting https server"
 			logger.Error(msg, err)
-			cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			panic(err)
 		}
 	} else {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			msg := "Error while starting http server"
 			logger.Error(msg, err)
-			cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+			cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			panic(err)
 		}
 	}
