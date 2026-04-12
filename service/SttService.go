@@ -45,10 +45,8 @@ func NewSttService(cfg *config.AppConfig) DefaultSttService {
 
 func (s DefaultSttService) Extract(ictx context.Context, sourcePath string) error {
 	var (
-		buf           = new(bytes.Buffer{})
-		mpw           = multipart.NewWriter(buf)
-		extractedText string
-		jsonRes       map[string]any
+		buf = new(bytes.Buffer{})
+		mpw = multipart.NewWriter(buf)
 	)
 	msg := fmt.Sprintf("Starting extraction using speaches at %v:%v...", s.Cfg.Stt.SpeachesHost, s.Cfg.Stt.SpeachesPort)
 	logger.Info(msg)
@@ -154,43 +152,11 @@ func (s DefaultSttService) Extract(ictx context.Context, sourcePath string) erro
 	logger.Info(msg)
 	s.Cfg.RunTime.OLog.Info(msg)
 	if resp.StatusCode == http.StatusOK {
-		bodyBytes, err := io.ReadAll(resp.Body)
+		err := s.ProcessResult(resp, sourceFilePath)
 		if err != nil {
-			msg := "Error when reading response body"
-			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
-			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
-			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
 			span.RecordError(err)
 			return err
 		}
-		err = json.Unmarshal(bodyBytes, &jsonRes)
-		if err != nil {
-			msg := "Error when unmarshalling response body"
-			helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
-			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
-			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
-			span.RecordError(err)
-			return err
-		}
-		extractedText = jsonRes["text"].(string)
-		basePath := filepath.Dir(sourceFilePath)
-		file := fileNameWithoutExt(filepath.Base(sourceFilePath))
-		targetFilePath := filepath.Join(basePath, file+".txt")
-		targetFile, err := os.Create(targetFilePath)
-		if err != nil {
-			msg := "Error when saving result"
-			helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
-			s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
-			logger.Error(msg, err)
-			s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
-			span.RecordError(err)
-			return err
-		}
-		defer targetFile.Close()
-		targetFile.WriteString(extractedText)
-		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, "Speech-To-Text extracted successfully", extractedText)
 		s.Cfg.Metrics.SttSuccessCounter.Add(context.TODO(), 1)
 		msg := "STT extraction successful"
 		logger.Info(msg)
@@ -207,6 +173,48 @@ func (s DefaultSttService) Extract(ictx context.Context, sourcePath string) erro
 		span.RecordError(err)
 		return err
 	}
+}
+
+func (s DefaultSttService) ProcessResult(resp *http.Response, sourceFilePath string) error {
+	var (
+		extractedText string
+		jsonRes       map[string]any
+	)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		msg := "Error when reading response body"
+		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
+		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
+		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
+		return err
+	}
+	err = json.Unmarshal(bodyBytes, &jsonRes)
+	if err != nil {
+		msg := "Error when unmarshalling response body"
+		helper.AddToSttList(s.Cfg, sourceFilePath, "", msg, "")
+		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
+		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
+		return err
+	}
+	extractedText = jsonRes["text"].(string)
+	basePath := filepath.Dir(sourceFilePath)
+	file := fileNameWithoutExt(filepath.Base(sourceFilePath))
+	targetFilePath := filepath.Join(basePath, file+".txt")
+	targetFile, err := os.Create(targetFilePath)
+	if err != nil {
+		msg := "Error when saving result"
+		helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, msg, "")
+		s.Cfg.Metrics.SttFailureCounter.Add(context.TODO(), 1)
+		logger.Error(msg, err)
+		s.Cfg.RunTime.OLog.Error(msg, slog.String(eMsg, err.Error()))
+		return err
+	}
+	defer targetFile.Close()
+	targetFile.WriteString(extractedText)
+	helper.AddToSttList(s.Cfg, sourceFilePath, targetFilePath, "Speech-To-Text extracted successfully", extractedText)
+	return nil
 }
 
 func fileNameWithoutExt(fileName string) string {
