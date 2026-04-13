@@ -29,9 +29,9 @@ func (uh SttHandler) Receive(c *gin.Context) {
 	var newSttReq dto.SttRequest
 	if err := c.ShouldBindJSON(&newSttReq); err != nil {
 		msg := "Invalid JSON body in STT request"
-		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
+		uh.Cfg.Metrics.SttFailureCounter.Add(c.Request.Context(), 1)
 		logger.Error(msg, err)
-		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		uh.Cfg.RunTime.OLog.ErrorContext(c.Request.Context(), msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
@@ -39,9 +39,9 @@ func (uh SttHandler) Receive(c *gin.Context) {
 	uh.Cfg.RunTime.Sani.Sanitize(&newSttReq)
 	if err := validateNewSttRequest(newSttReq); err != nil {
 		msg := "Invalid parameter in STT request."
-		uh.Cfg.Metrics.SttFailureCounter.Add(c.Copy().Request.Context(), 1)
+		uh.Cfg.Metrics.SttFailureCounter.Add(c.Request.Context(), 1)
 		logger.Error(msg, err)
-		uh.Cfg.RunTime.OLog.Error(msg, slog.String("Error Message", err.Error()))
+		uh.Cfg.RunTime.OLog.ErrorContext(c.Request.Context(), msg, slog.String("Error Message", err.Error()))
 		apiErr := api_error.NewBadRequestError(msg)
 		c.JSON(apiErr.StatusCode(), apiErr)
 		return
