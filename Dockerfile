@@ -7,7 +7,7 @@ RUN git clone https://github.com/johannes-kuhfuss/stt-service.git
 WORKDIR /build/stt-service
 RUN go build -o /build/stt-service/stt-service /build/stt-service/main.go
 # Run container
-FROM alpine:3.23.3
+FROM alpine:3.23.4
 RUN apk -U upgrade --no-cache && rm -rf /var/cache/apk/* && mkdir /app
 WORKDIR /app
 COPY --from=0 /build/stt-service/stt-service /app/stt-service
